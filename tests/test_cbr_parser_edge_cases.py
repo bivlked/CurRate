@@ -42,22 +42,22 @@ def test_get_currency_rate_table_is_none(mock_get_session):
     """Тест обработки случая, когда таблица не найдена (None)."""
     from src.currate.cbr_parser import reset_session
     reset_session()  # Сбросить глобальную сессию перед тестом
-    
+
     html_content = "<html><body><p>No table</p></body></html>"
-    
+
     mock_response = Mock()
     mock_response.text = html_content
     mock_response.raise_for_status = Mock()
-    
+
     mock_session_instance = Mock()
     mock_session_instance.get.return_value = mock_response
     mock_get_session.return_value = mock_session_instance
-    
+
     with pytest.raises(CBRParseError) as exc_info:
         get_currency_rate("USD", "01.12.2024")
-    
+
     assert "Таблица с курсами не найдена" in str(exc_info.value)
-    
+
     reset_session()  # Очистить после теста
 
 
@@ -94,16 +94,16 @@ def test_get_currency_rate_unexpected_exception(mock_get_session):
     """Тест обработки неожиданного исключения."""
     from src.currate.cbr_parser import reset_session
     reset_session()  # Сбросить глобальную сессию перед тестом
-    
+
     mock_session_instance = Mock()
     mock_session_instance.get.side_effect = ValueError("Unexpected error")
     mock_get_session.return_value = mock_session_instance
-    
+
     with pytest.raises(CBRParseError) as exc_info:
         get_currency_rate("USD", "01.12.2024")
-    
+
     assert "Неожиданная ошибка" in str(exc_info.value)
-    
+
     reset_session()  # Очистить после теста
 
 
@@ -121,7 +121,7 @@ def test_get_currency_rate_with_custom_timeout(mock_get_session):
     """Тест получения курса с кастомным таймаутом."""
     from src.currate.cbr_parser import reset_session
     reset_session()  # Сбросить глобальную сессию перед тестом
-    
+
     html_content = """
     <html>
         <body>
@@ -132,24 +132,21 @@ def test_get_currency_rate_with_custom_timeout(mock_get_session):
         </body>
     </html>
     """
-    
+
     mock_response = Mock()
     mock_response.text = html_content
     mock_response.raise_for_status = Mock()
-    
+
     mock_session_instance = Mock()
     mock_session_instance.get.return_value = mock_response
     mock_get_session.return_value = mock_session_instance
-    
+
     rate = get_currency_rate("USD", "01.12.2024", timeout=5)
     assert rate == 95.50
     # Проверяем, что таймаут передан в запрос
     mock_session_instance.get.assert_called_once()
-    
+
     reset_session()  # Очистить после теста
     call_args = mock_session_instance.get.call_args
     assert call_args[1]['timeout'] == 5
-
-
-
 
