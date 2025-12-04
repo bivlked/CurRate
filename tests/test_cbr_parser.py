@@ -258,4 +258,3 @@ def test_get_currency_rate_retry_logic(mock_get_session):
     assert "HTTP ошибка" in str(exc_info.value)
     
     reset_session()  # Очистить после теста
-

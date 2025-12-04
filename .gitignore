@@ -69,3 +69,6 @@ CLAUDE.local.md
 .claude/settings.local.json
 .claude/debug/
 .claude/shell-snapshots/
+
+# Cursor IDE temporary files
+assets/
