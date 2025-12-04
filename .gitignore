@@ -61,6 +61,9 @@ data/
 logs/
 *.log
 
+# Memory Bank (internal development files)
+memory-bank/
+
 # Claude Code local files
 CLAUDE.local.md
 .claude/settings.local.json
