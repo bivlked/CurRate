@@ -92,21 +92,23 @@ def test_convert_with_cache(mock_get_rate):
     
     converter = CurrencyConverter(use_cache=True)
     
+    # Очищаем кэш перед тестом, чтобы гарантировать, что курс не в кэше
+    if converter._cache is not None:
+        converter._cache.clear()
+    
     # Первый вызов - должен запросить курс
     result1, error1 = converter.convert(100.0, "USD", "01.12.2024")
     assert result1 == 9550.0
     assert error1 is None
     # Проверяем, что get_currency_rate был вызван для первой даты
-    # (может быть вызван через get_rate или напрямую)
-    assert mock_get_rate.called
+    assert mock_get_rate.call_count == 1
     
     # Второй вызов с той же датой - должен использовать кэш
-    initial_call_count = mock_get_rate.call_count
     result2, error2 = converter.convert(200.0, "USD", "01.12.2024")
     assert result2 == 19100.0  # 200 * 95.5
     assert error2 is None
     # Кэш должен сработать - get_currency_rate не должен быть вызван снова
-    assert mock_get_rate.call_count == initial_call_count
+    assert mock_get_rate.call_count == 1
     
     # Третий вызов с другой датой - должен запросить курс
     mock_get_rate.return_value = 96.0
@@ -114,7 +116,7 @@ def test_convert_with_cache(mock_get_rate):
     assert result3 == 9600.0
     assert error3 is None
     # Для новой даты должен быть дополнительный запрос
-    assert mock_get_rate.call_count > initial_call_count
+    assert mock_get_rate.call_count == 2
 
 
 @patch('src.currate.currency_converter.get_currency_rate')
