@@ -66,9 +66,10 @@ def test_convert_usd_success(mock_get_rate):
     mock_get_rate.return_value = 95.5
     
     converter = CurrencyConverter(use_cache=False)
-    result, error = converter.convert(100.0, "USD", "01.12.2024")
+    result, rate, error = converter.convert(100.0, "USD", "01.12.2024")
     
     assert result == 9550.0  # 100 * 95.5
+    assert rate == 95.5
     assert error is None
     mock_get_rate.assert_called_once_with("USD", "01.12.2024")
 
@@ -79,9 +80,10 @@ def test_convert_eur_success(mock_get_rate):
     mock_get_rate.return_value = 105.0
     
     converter = CurrencyConverter(use_cache=False)
-    result, error = converter.convert(50.0, "EUR", "01.12.2024")
+    result, rate, error = converter.convert(50.0, "EUR", "01.12.2024")
     
     assert result == 5250.0  # 50 * 105.0
+    assert rate == 105.0
     assert error is None
 
 
@@ -97,23 +99,26 @@ def test_convert_with_cache(mock_get_rate):
         converter._cache.clear()
     
     # Первый вызов - должен запросить курс
-    result1, error1 = converter.convert(100.0, "USD", "01.12.2024")
+    result1, rate1, error1 = converter.convert(100.0, "USD", "01.12.2024")
     assert result1 == 9550.0
+    assert rate1 == 95.5
     assert error1 is None
     # Проверяем, что get_currency_rate был вызван для первой даты
     assert mock_get_rate.call_count == 1
     
     # Второй вызов с той же датой - должен использовать кэш
-    result2, error2 = converter.convert(200.0, "USD", "01.12.2024")
+    result2, rate2, error2 = converter.convert(200.0, "USD", "01.12.2024")
     assert result2 == 19100.0  # 200 * 95.5
+    assert rate2 == 95.5
     assert error2 is None
     # Кэш должен сработать - get_currency_rate не должен быть вызван снова
     assert mock_get_rate.call_count == 1
     
     # Третий вызов с другой датой - должен запросить курс
     mock_get_rate.return_value = 96.0
-    result3, error3 = converter.convert(100.0, "USD", "02.12.2024")
+    result3, rate3, error3 = converter.convert(100.0, "USD", "02.12.2024")
     assert result3 == 9600.0
+    assert rate3 == 96.0
     assert error3 is None
     # Для новой даты должен быть дополнительный запрос
     assert mock_get_rate.call_count == 2
@@ -125,9 +130,10 @@ def test_convert_connection_error(mock_get_rate):
     mock_get_rate.side_effect = CBRConnectionError("Ошибка соединения")
     
     converter = CurrencyConverter(use_cache=False)
-    result, error = converter.convert(100.0, "USD", "01.12.2024")
+    result, rate, error = converter.convert(100.0, "USD", "01.12.2024")
     
     assert result is None
+    assert rate is None
     # Проверяем user-friendly сообщение
     assert "подключиться" in error or "соединения" in error
     assert error == "Не удалось подключиться к серверу ЦБ РФ. Проверьте подключение к интернету."
@@ -139,9 +145,10 @@ def test_convert_parse_error(mock_get_rate):
     mock_get_rate.side_effect = CBRParseError("Ошибка парсинга")
     
     converter = CurrencyConverter(use_cache=False)
-    result, error = converter.convert(100.0, "USD", "01.12.2024")
+    result, rate, error = converter.convert(100.0, "USD", "01.12.2024")
     
     assert result is None
+    assert rate is None
     # Проверяем user-friendly сообщение
     assert "обработке данных" in error or "другую дату" in error
     assert error == "Ошибка при обработке данных с сервера. Попробуйте другую дату."
@@ -153,9 +160,10 @@ def test_convert_rate_none(mock_get_rate):
     mock_get_rate.return_value = None
     
     converter = CurrencyConverter(use_cache=False)
-    result, error = converter.convert(100.0, "USD", "01.12.2024")
+    result, rate, error = converter.convert(100.0, "USD", "01.12.2024")
     
     assert result is None
+    assert rate is None
     assert "Не удалось получить курс" in error
 
 

@@ -68,3 +68,7 @@ def test_cbr_parse_error_generic():
     assert "обработке данных" in message
     assert "другую дату" in message
 
+
+
+
+

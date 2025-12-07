@@ -150,3 +150,7 @@ def test_get_currency_rate_with_custom_timeout(mock_get_session):
     call_args = mock_session_instance.get.call_args
     assert call_args[1]['timeout'] == 5
 
+
+
+
+

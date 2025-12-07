@@ -41,3 +41,7 @@ def test_main_module_entry(mock_app_class, mock_tk):
     mock_app_class.assert_called_once_with(mock_root)
     mock_app.run.assert_called_once()
 
+
+
+
+

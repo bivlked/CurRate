@@ -48,9 +48,10 @@ def test_unsupported_currency():
     """Тест неподдерживаемой валюты."""
     converter = CurrencyConverter(use_cache=False)
 
-    result, error = converter.convert(100.0, "GBP", "01.12.2024")
+    result, rate, error = converter.convert(100.0, "GBP", "01.12.2024")
 
     assert result is None
+    assert rate is None
     assert "Неподдерживаемая валюта" in error
 
 
@@ -58,9 +59,10 @@ def test_negative_amount():
     """Тест отрицательной суммы."""
     converter = CurrencyConverter(use_cache=False)
 
-    result, error = converter.convert(-100.0, "USD", "01.12.2024")
+    result, rate, error = converter.convert(-100.0, "USD", "01.12.2024")
 
     assert result is None
+    assert rate is None
     assert "положительным числом" in error
 
 
@@ -68,7 +70,8 @@ def test_zero_amount():
     """Тест нулевой суммы."""
     converter = CurrencyConverter(use_cache=False)
 
-    result, error = converter.convert(0, "USD", "01.12.2024")
+    result, rate, error = converter.convert(0, "USD", "01.12.2024")
 
     assert result is None
+    assert rate is None
     assert "положительным числом" in error
