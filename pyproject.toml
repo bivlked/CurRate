@@ -1,9 +1,9 @@
 [project]
 name = "currate"
-version = "0.1.0"
+version = "1.0.0"
 description = "Currency rates project"
 authors = [
-    {name = "biv"}
+    {name = "Ivan Bondarev", email = "ivan@bondarev.net"}
 ]
 readme = "README.md"
 requires-python = "^3.14"
@@ -18,3 +18,13 @@ dependencies = [
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.1,<10.0.0)",
+    "pytest-cov (>=7.0.0,<8.0.0)",
+    "pylint (>=4.0.4,<5.0.0)",
+    "mypy (>=1.19.0,<2.0.0)",
+    "types-requests (>=2.32.4.20250913,<3.0.0.0)",
+    "types-beautifulsoup4 (>=4.12.0.20250516,<5.0.0.0)"
+]
