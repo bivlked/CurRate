@@ -5,7 +5,8 @@
 количества запросов к сайту ЦБ РФ.
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Optional, Tuple
+from collections import OrderedDict
 from datetime import datetime, timedelta
 
 
@@ -25,13 +26,16 @@ class CurrencyCache:
             max_size: Максимальное количество записей в кэше (по умолчанию 100).
             ttl_hours: Время жизни записи в часах (по умолчанию 24).
         """
-        self._cache: Dict[Tuple[str, str], Tuple[float, datetime]] = {}
+        self._cache: OrderedDict[Tuple[str, str], Tuple[float, datetime]] = OrderedDict()
         self._max_size = max_size
         self._ttl = timedelta(hours=ttl_hours)
 
     def get(self, currency: str, date: str) -> Optional[float]:
         """
         Получает курс валюты из кэша.
+
+        Использует LRU (Least Recently Used) стратегию:
+        при доступе запись перемещается в конец (самая недавно использованная).
 
         Args:
             currency: Код валюты (USD, EUR).
@@ -45,48 +49,44 @@ class CurrencyCache:
         if key not in self._cache:
             return None
 
-        rate, cached_at = self._cache[key]
+        # Извлекаем запись (удаляем из текущей позиции)
+        rate, cached_at = self._cache.pop(key)
 
         # Проверяем, не устарела ли запись
         if datetime.now() - cached_at > self._ttl:
-            del self._cache[key]
             return None
 
+        # Перемещаем в конец (самая недавно использованная)
+        self._cache[key] = (rate, cached_at)
         return rate
 
     def set(self, currency: str, date: str, rate: float) -> None:
         """
         Сохраняет курс валюты в кэш.
 
+        Использует LRU (Least Recently Used) стратегию:
+        при переполнении удаляется самая старая запись (первая в OrderedDict).
+
         Args:
             currency: Код валюты (USD, EUR).
             date: Дата в формате DD.MM.YYYY.
             rate: Курс валюты.
         """
-        # Если кэш переполнен, удаляем самые старые записи
-        if len(self._cache) >= self._max_size:
-            self._evict_oldest()
-
         key = (currency, date)
+
+        # Если ключ уже есть - обновляем и перемещаем в конец
+        if key in self._cache:
+            self._cache.pop(key)
+        elif len(self._cache) >= self._max_size:
+            # Удаляем самый старый элемент (первый в OrderedDict)
+            self._cache.popitem(last=False)
+
+        # Добавляем в конец (самая недавно использованная)
         self._cache[key] = (rate, datetime.now())
 
     def clear(self) -> None:
         """Очищает весь кэш."""
         self._cache.clear()
-
-    def _evict_oldest(self) -> None:
-        """Удаляет 25% самых старых записей из кэша."""
-        if not self._cache:
-            return
-
-        # Сортируем по времени добавления
-        sorted_items = sorted(self._cache.items(), key=lambda x: x[1][1])
-
-        # Удаляем 25% самых старых
-        items_to_remove = max(1, len(sorted_items) // 4)
-        for i in range(items_to_remove):
-            key = sorted_items[i][0]
-            del self._cache[key]
 
     def size(self) -> int:
         """

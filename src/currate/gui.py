@@ -159,15 +159,14 @@ class CurrencyConverterApp:
             return
 
         # Выполняем конвертацию
-        result, error = self.converter.convert(amount, currency, date)
+        result, rate, error = self.converter.convert(amount, currency, date)
 
         if error:
             self._show_error(error)
             return
 
         # Отображаем результат
-        rate, _ = self.converter.get_rate(currency, date)
-        if rate:
+        if result is not None and rate is not None:
             formatted_result = self.converter.format_result(amount, rate, currency)
             self.result_label.config(text=formatted_result)
             self.copy_button.config(state=tk.NORMAL)  # Активируем кнопку копирования

@@ -36,7 +36,7 @@ class CurrencyConverter:
         amount: float,
         from_currency: str,
         date: str
-    ) -> Tuple[Optional[float], Optional[str]]:
+    ) -> Tuple[Optional[float], Optional[float], Optional[str]]:
         """
         Конвертирует валюту в рубли.
 
@@ -46,25 +46,25 @@ class CurrencyConverter:
             date: Дата курса в формате DD.MM.YYYY.
 
         Returns:
-            Tuple[float | None, str | None]: (результат в рублях, сообщение об ошибке).
-            Если успешно - (результат, None), если ошибка - (None, сообщение).
+            Tuple[float | None, float | None, str | None]: (результат в рублях, курс валюты, сообщение об ошибке).
+            Если успешно - (результат, курс, None), если ошибка - (None, None, сообщение).
         """
         # Валидация валюты
         if from_currency not in self.SUPPORTED_CURRENCIES:
-            return None, f"Неподдерживаемая валюта: {from_currency}"
+            return None, None, f"Неподдерживаемая валюта: {from_currency}"
 
         # Валидация суммы
         if amount <= 0:
-            return None, "Сумма должна быть положительным числом"
+            return None, None, "Сумма должна быть положительным числом"
 
         # Валидация даты
         validation_error = self._validate_date(date)
         if validation_error:
-            return None, validation_error
+            return None, None, validation_error
 
         # Попытка получить курс из кэша
         rate = None
-        if self._use_cache:
+        if self._use_cache and self._cache is not None:
             rate = self._cache.get(from_currency, date)
 
         # Если в кэше нет, загружаем с сайта ЦБ РФ
@@ -72,18 +72,18 @@ class CurrencyConverter:
             try:
                 rate = get_currency_rate(from_currency, date)
                 if rate is None:
-                    return None, "Не удалось получить курс валюты"
+                    return None, None, "Не удалось получить курс валюты"
 
                 # Сохраняем в кэш
-                if self._use_cache:
+                if self._use_cache and self._cache is not None:
                     self._cache.set(from_currency, date, rate)
 
             except CBRParserError as e:
-                return None, str(e)
+                return None, None, e.get_user_message()
 
         # Выполняем конвертацию
         result = amount * rate
-        return result, None
+        return result, rate, None
 
     def get_rate(
         self,
@@ -109,7 +109,7 @@ class CurrencyConverter:
 
         # Проверяем кэш
         rate = None
-        if self._use_cache:
+        if self._use_cache and self._cache is not None:
             rate = self._cache.get(currency, date)
 
         if rate is None:
@@ -118,11 +118,11 @@ class CurrencyConverter:
                 if rate is None:
                     return None, "Не удалось получить курс валюты"
 
-                if self._use_cache:
+                if self._use_cache and self._cache is not None:
                     self._cache.set(currency, date, rate)
 
             except CBRParserError as e:
-                return None, str(e)
+                return None, e.get_user_message()
 
         return rate, None
 
