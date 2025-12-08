@@ -117,7 +117,7 @@ def reset_session() -> None:
         _session = None
 
 
-def get_currency_rate(currency: str, date: str, timeout: int = 10) -> Optional[float]:
+def get_currency_rate(currency: str, date: str, timeout: int = 10) -> float:
     """
     Получает курс валюты с сайта ЦБ РФ на указанную дату.
 
@@ -131,11 +131,11 @@ def get_currency_rate(currency: str, date: str, timeout: int = 10) -> Optional[f
         timeout: Таймаут запроса в секундах (по умолчанию 10).
 
     Returns:
-        float: Курс валюты за 1 единицу или None при ошибке.
+        float: Курс валюты за 1 единицу.
 
     Raises:
-        CBRConnectionError: При ошибке соединения.
-        CBRParseError: При ошибке парсинга данных.
+        CBRConnectionError: При ошибке соединения с сайтом ЦБ РФ.
+        CBRParseError: При ошибке парсинга данных или если валюта не найдена.
     """
     url = f"https://cbr.ru/currency_base/daily/?UniDbQuery.Posted=True&UniDbQuery.To={date}"
 

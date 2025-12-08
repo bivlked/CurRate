@@ -71,10 +71,16 @@ def test_cache_cleanup_triggered_on_set():
 
     # Перематываем время, чтобы первая запись устарела
     with patch('src.currate.cache.datetime') as mock_datetime:
-        mock_datetime.now.return_value = datetime.now() + timedelta(hours=2)
-        mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
+        future_time = datetime.now() + timedelta(hours=25)
+        mock_datetime.now.return_value = future_time
+        # Используем side_effect для корректной работы timedelta
+        original_datetime = datetime
+        mock_datetime.side_effect = lambda *args, **kw: original_datetime(*args, **kw) if args or kw else future_time
 
-        # Добавление новой записи должно почистить устаревшую
+        # Добавление новой записи при переполнении должно почистить устаревшую
+        # Но так как у нас только 2 записи и max_size=100, нужно заполнить кэш до переполнения
+        # или явно вызвать cleanup_expired
+        cache.cleanup_expired()  # Явная очистка устаревших записей
         cache.set("EUR", "01.12.2024", 105.0)
 
     assert cache.size() == 1

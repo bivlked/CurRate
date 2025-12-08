@@ -44,8 +44,6 @@ class CurrencyCache:
         Returns:
             float: Курс валюты или None, если запись не найдена или устарела.
         """
-        # Удаляем устаревшие записи, чтобы TTL работал даже без прямого доступа к ключам
-        self.cleanup_expired()
         key = (currency, date)
 
         if key not in self._cache:
@@ -54,7 +52,7 @@ class CurrencyCache:
         # Извлекаем запись (удаляем из текущей позиции)
         rate, cached_at = self._cache.pop(key)
 
-        # Проверяем, не устарела ли запись
+        # Проверяем, не устарела ли запись (ленивая проверка TTL)
         if datetime.now() - cached_at > self._ttl:
             return None
 
@@ -76,15 +74,16 @@ class CurrencyCache:
         """
         key = (currency, date)
 
-        # Перед добавлением чистим устаревшие записи, чтобы не накапливать мусор
-        self.cleanup_expired()
-
         # Если ключ уже есть - обновляем и перемещаем в конец
         if key in self._cache:
             self._cache.pop(key)
         elif len(self._cache) >= self._max_size:
-            # Удаляем самый старый элемент (первый в OrderedDict)
-            self._cache.popitem(last=False)
+            # При переполнении сначала очищаем устаревшие записи (ленивая очистка)
+            # Это оптимизирует производительность: очистка только при необходимости
+            self.cleanup_expired()
+            # Если после очистки все еще переполнен, удаляем самый старый элемент
+            if len(self._cache) >= self._max_size:
+                self._cache.popitem(last=False)
 
         # Добавляем в конец (самая недавно использованная)
         self._cache[key] = (rate, datetime.now())
