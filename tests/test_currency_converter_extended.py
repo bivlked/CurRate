@@ -88,6 +88,20 @@ def test_convert_eur_success(mock_get_rate):
 
 
 @patch('src.currate.currency_converter.get_currency_rate')
+def test_convert_accepts_lowercase_currency(mock_get_rate):
+    """Тест регистронезависимого кода валюты при конвертации."""
+    mock_get_rate.return_value = 95.5
+
+    converter = CurrencyConverter(use_cache=False)
+    result, rate, error = converter.convert(100.0, "usd", "01.12.2024")
+
+    assert result == 9550.0
+    assert rate == 95.5
+    assert error is None
+    mock_get_rate.assert_called_once_with("USD", "01.12.2024")
+
+
+@patch('src.currate.currency_converter.get_currency_rate')
 def test_convert_with_cache(mock_get_rate):
     """Тест конвертации с использованием кэша."""
     mock_get_rate.return_value = 95.5
@@ -179,6 +193,19 @@ def test_get_rate_success():
         assert error is None
 
 
+def test_get_rate_accepts_mixed_case():
+    """Тест получения курса с любым регистром кода валюты."""
+    with patch('src.currate.currency_converter.get_currency_rate') as mock_get_rate:
+        mock_get_rate.return_value = 105.0
+
+        converter = CurrencyConverter(use_cache=False)
+        rate, error = converter.get_rate("eUr", "01.12.2024")
+
+        assert rate == 105.0
+        assert error is None
+        mock_get_rate.assert_called_once_with("EUR", "01.12.2024")
+
+
 def test_get_rate_unsupported_currency():
     """Тест получения курса для неподдерживаемой валюты."""
     converter = CurrencyConverter(use_cache=False)
@@ -186,6 +213,28 @@ def test_get_rate_unsupported_currency():
     
     assert rate is None
     assert "Неподдерживаемая валюта" in error
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ("1 234,56", 1234.56),
+        ("1.234,56", 1234.56),
+        ("1,234.56", 1234.56),
+        ("2\u202f345", 2345.0),  # тонкий пробел
+        (" 500 ", 500.0),
+        ("1_000", 1000.0),
+    ],
+)
+def test_parse_amount_normalizes_grouping(raw, expected):
+    """Тест нормализации суммы с разделителями тысяч и пробелами."""
+    assert CurrencyConverter.parse_amount(raw) == expected
+
+
+@pytest.mark.parametrize("raw", ["", "abc", None])  # type: ignore[list-item]
+def test_parse_amount_invalid_values(raw):
+    """Тест обработки невалидных строк при парсинге суммы."""
+    assert CurrencyConverter.parse_amount(raw) is None
 
 
 def test_validate_date_past():
