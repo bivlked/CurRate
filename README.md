@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-85-success.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/Coverage-78%25-success.svg)](tests/)
-[![Code Quality](https://img.shields.io/badge/Pylint-10.00%2F10-brightgreen.svg)](src/currate/)
+[![Code Quality](https://img.shields.io/badge/Pylint-9.41%2F10-brightgreen.svg)](src/currate/)
 
 GUI приложение на Python для конвертации USD и EUR в рубли по официальным курсам Центрального Банка РФ
 
@@ -229,7 +229,7 @@ poetry run pytest
 
 ### Качество кода
 
-- ✅ **Pylint**: 10.00/10 для всех модулей
+- ✅ **Pylint**: 9.41/10
 - ✅ **Mypy**: без ошибок типов
 - ✅ **Black**: автоматическое форматирование
 - ✅ **Pytest**: 85 тестов с покрытием 78%
