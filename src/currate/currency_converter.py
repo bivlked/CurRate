@@ -51,8 +51,10 @@ class CurrencyConverter:
                 Если успешно - (результат, курс, None),
                 если ошибка - (None, None, сообщение).
         """
+        currency = self._normalize_currency(from_currency)
+
         # Валидация валюты
-        if from_currency not in self.SUPPORTED_CURRENCIES:
+        if currency is None or currency not in self.SUPPORTED_CURRENCIES:
             return None, None, f"Неподдерживаемая валюта: {from_currency}"
 
         # Валидация суммы
@@ -67,18 +69,18 @@ class CurrencyConverter:
         # Попытка получить курс из кэша
         rate = None
         if self._use_cache and self._cache is not None:
-            rate = self._cache.get(from_currency, date)
+            rate = self._cache.get(currency, date)
 
         # Если в кэше нет, загружаем с сайта ЦБ РФ
         if rate is None:
             try:
-                rate = get_currency_rate(from_currency, date)
+                rate = get_currency_rate(currency, date)
                 if rate is None:
                     return None, None, "Не удалось получить курс валюты"
 
                 # Сохраняем в кэш
                 if self._use_cache and self._cache is not None:
-                    self._cache.set(from_currency, date, rate)
+                    self._cache.set(currency, date, rate)
 
             except CBRParserError as e:
                 return None, None, e.get_user_message()
@@ -102,7 +104,8 @@ class CurrencyConverter:
         Returns:
             Tuple[float | None, str | None]: (курс, сообщение об ошибке).
         """
-        if currency not in self.SUPPORTED_CURRENCIES:
+        normalized_currency = self._normalize_currency(currency)
+        if normalized_currency is None or normalized_currency not in self.SUPPORTED_CURRENCIES:
             return None, f"Неподдерживаемая валюта: {currency}"
 
         validation_error = self._validate_date(date)
@@ -112,16 +115,16 @@ class CurrencyConverter:
         # Проверяем кэш
         rate = None
         if self._use_cache and self._cache is not None:
-            rate = self._cache.get(currency, date)
+            rate = self._cache.get(normalized_currency, date)
 
         if rate is None:
             try:
-                rate = get_currency_rate(currency, date)
+                rate = get_currency_rate(normalized_currency, date)
                 if rate is None:
                     return None, "Не удалось получить курс валюты"
 
                 if self._use_cache and self._cache is not None:
-                    self._cache.set(currency, date, rate)
+                    self._cache.set(normalized_currency, date, rate)
 
             except CBRParserError as e:
                 return None, e.get_user_message()
@@ -169,7 +172,8 @@ class CurrencyConverter:
             str: Отформатированная строка результата.
         """
         result_in_rub = amount * rate
-        currency_symbol = "$" if currency == "USD" else "€"
+        normalized_currency = currency.upper()
+        currency_symbol = "$" if normalized_currency == "USD" else "€"
 
         # Форматируем: разделитель тысяч - пробел, десятичный разделитель - запятая
         result_str = (
@@ -181,3 +185,44 @@ class CurrencyConverter:
         )
 
         return result_str
+
+    @staticmethod
+    def parse_amount(amount_str: str) -> Optional[float]:
+        """
+        Нормализует строку суммы и преобразует ее в float.
+
+        Убирает пробелы/неразрывные пробелы и разделители тысяч (пробел/точка/апостроф),
+        заменяет запятую на точку. Если точек несколько, оставляет последнюю как
+        десятичный разделитель.
+        """
+        if amount_str is None:
+            return None
+
+        cleaned = (
+            amount_str.strip()
+            .replace('\u00A0', '')
+            .replace('\u202F', '')
+            .replace(' ', '')
+            .replace('_', '')
+            .replace("'", '')
+        )
+        if not cleaned:
+            return None
+
+        cleaned = cleaned.replace(',', '.')
+        if cleaned.count('.') > 1:
+            parts = cleaned.split('.')
+            cleaned = ''.join(parts[:-1]) + '.' + parts[-1]
+
+        try:
+            return float(cleaned)
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _normalize_currency(currency: str) -> Optional[str]:
+        """Возвращает код валюты в верхнем регистре или None, если строка пустая."""
+        if currency is None:
+            return None
+        normalized = currency.strip().upper()
+        return normalized if normalized else None

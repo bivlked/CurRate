@@ -4,7 +4,9 @@
 Содержит классы для создания и управления GUI на базе Tkinter.
 """
 
+import threading
 import tkinter as tk
+from typing import Optional
 from datetime import datetime
 from tkinter import ttk, messagebox
 
@@ -149,24 +151,55 @@ class CurrencyConverterApp:
         """Обработчик нажатия кнопки конвертации."""
         # Получаем данные из полей
         date = self.date_entry.get()
-        currency = self.currency_var.get()
-        amount_str = self.amount_entry.get().replace(',', '.')
+        currency = self.currency_var.get().strip()
+        normalized_currency = currency.upper()
+        amount_str = self.amount_entry.get()
 
-        # Валидация суммы
-        try:
-            amount = float(amount_str)
-        except ValueError:
+        amount = CurrencyConverter.parse_amount(amount_str)
+        if amount is None:
             self._show_error("Некорректное значение суммы")
             return
 
-        # Выполняем конвертацию
-        result, rate, error = self.converter.convert(amount, currency, date)
+        # Пока идет запрос, блокируем кнопку, чтобы не подвесить окно многократными вызовами
+        self.copy_button.config(state=tk.DISABLED)
+        self.convert_button.config(state=tk.DISABLED)
+        self.result_label.config(text="Получаю курс...")
+
+        worker = threading.Thread(
+            target=self._perform_conversion,
+            args=(amount, normalized_currency, date),
+            daemon=True
+        )
+        worker.start()
+
+    def _perform_conversion(self, amount: float, currency: str, date: str) -> None:
+        """Выполняет конвертацию в фоновой нити, чтобы не блокировать GUI."""
+        try:
+            result, rate, error = self.converter.convert(amount, currency, date)
+        except Exception as exc:  # Перехватываем неожиданные ошибки, чтобы не оставлять кнопку заблокированной
+            error = f"Не удалось выполнить конвертацию: {exc}"
+            result, rate = None, None
+
+        self.root.after(
+            0,
+            lambda: self._finish_conversion(amount, currency, result, rate, error)
+        )
+
+    def _finish_conversion(
+        self,
+        amount: float,
+        currency: str,
+        result: Optional[float],
+        rate: Optional[float],
+        error: Optional[str]
+    ) -> None:
+        """Обновляет UI после завершения фонового запроса."""
+        self.convert_button.config(state=tk.NORMAL)
 
         if error:
             self._show_error(error)
             return
 
-        # Отображаем результат
         if result is not None and rate is not None:
             formatted_result = self.converter.format_result(amount, rate, currency)
             self.result_label.config(text=formatted_result)

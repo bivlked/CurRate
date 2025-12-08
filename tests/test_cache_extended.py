@@ -64,6 +64,23 @@ def test_cache_cleanup_expired_partial():
     assert removed_count >= 0  # Может быть 0, если записи не устарели
 
 
+def test_cache_cleanup_triggered_on_set():
+    """Тест, что устаревшие записи удаляются при добавлении новых."""
+    cache = CurrencyCache(max_size=10, ttl_hours=1)
+    cache.set("USD", "01.12.2024", 95.5)
+
+    # Перематываем время, чтобы первая запись устарела
+    with patch('src.currate.cache.datetime') as mock_datetime:
+        mock_datetime.now.return_value = datetime.now() + timedelta(hours=2)
+        mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
+
+        # Добавление новой записи должно почистить устаревшую
+        cache.set("EUR", "01.12.2024", 105.0)
+
+    assert cache.size() == 1
+    assert cache.get("EUR", "01.12.2024") == 105.0
+
+
 def test_cache_eviction_lru_behavior():
     """Тест поведения вытеснения (подготовка к LRU)."""
     cache = CurrencyCache(max_size=3, ttl_hours=24)

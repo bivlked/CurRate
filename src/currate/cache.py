@@ -44,6 +44,8 @@ class CurrencyCache:
         Returns:
             float: Курс валюты или None, если запись не найдена или устарела.
         """
+        # Удаляем устаревшие записи, чтобы TTL работал даже без прямого доступа к ключам
+        self.cleanup_expired()
         key = (currency, date)
 
         if key not in self._cache:
@@ -73,6 +75,9 @@ class CurrencyCache:
             rate: Курс валюты.
         """
         key = (currency, date)
+
+        # Перед добавлением чистим устаревшие записи, чтобы не накапливать мусор
+        self.cleanup_expired()
 
         # Если ключ уже есть - обновляем и перемещаем в конец
         if key in self._cache:
