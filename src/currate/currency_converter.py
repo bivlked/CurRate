@@ -46,8 +46,10 @@ class CurrencyConverter:
             date: Дата курса в формате DD.MM.YYYY.
 
         Returns:
-            Tuple[float | None, float | None, str | None]: (результат в рублях, курс валюты, сообщение об ошибке).
-            Если успешно - (результат, курс, None), если ошибка - (None, None, сообщение).
+            Tuple[float | None, float | None, str | None]:
+                (результат в рублях, курс валюты, сообщение об ошибке).
+                Если успешно - (результат, курс, None),
+                если ошибка - (None, None, сообщение).
         """
         # Валидация валюты
         if from_currency not in self.SUPPORTED_CURRENCIES:
@@ -170,7 +172,12 @@ class CurrencyConverter:
         currency_symbol = "$" if currency == "USD" else "€"
 
         # Форматируем: разделитель тысяч - пробел, десятичный разделитель - запятая
-        result_str = f"{result_in_rub:,.2f} руб. ({currency_symbol}{amount:,.2f} по курсу {rate:,.4f})"
-        result_str = result_str.replace(',', ' ').replace('.', ',').replace('руб,', 'руб.')
+        result_str = (
+            f"{result_in_rub:,.2f} руб. "
+            f"({currency_symbol}{amount:,.2f} по курсу {rate:,.4f})"
+        )
+        result_str = result_str.replace(',', ' ').replace('.', ',').replace(
+            'руб,', 'руб.'
+        )
 
         return result_str

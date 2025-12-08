@@ -5,10 +5,11 @@
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox
-from tkcalendar import Calendar
 from datetime import datetime
+from tkinter import ttk, messagebox
+
 import pyperclip
+from tkcalendar import Calendar
 
 from .currency_converter import CurrencyConverter
 

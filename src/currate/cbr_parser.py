@@ -166,11 +166,11 @@ def get_currency_rate(currency: str, date: str, timeout: int = 10) -> Optional[f
                     # Извлекаем номинал (столбец 3, индекс 2)
                     nominal_str = cols[2].text.strip()
                     nominal = int(nominal_str)
-                    
+
                     # Извлекаем курс (столбец 5, индекс 4)
                     rate_str = cols[4].text.strip().replace(',', '.')
                     rate = float(rate_str)
-                    
+
                     # Возвращаем курс за 1 единицу валюты
                     return rate / nominal
                 except (ValueError, IndexError) as e:
@@ -180,10 +180,14 @@ def get_currency_rate(currency: str, date: str, timeout: int = 10) -> Optional[f
         raise CBRParseError(f"Валюта {currency} не найдена в таблице курсов")
 
     except requests.exceptions.Timeout as exc:
-        raise CBRConnectionError(f"Превышено время ожидания ({timeout}с) при запросе к сайту ЦБ РФ") from exc
+        raise CBRConnectionError(
+            f"Превышено время ожидания ({timeout}с) при запросе к сайту ЦБ РФ"
+        ) from exc
 
     except requests.exceptions.ConnectionError as exc:
-        raise CBRConnectionError("Ошибка соединения с сайтом ЦБ РФ. Проверьте подключение к интернету") from exc
+        raise CBRConnectionError(
+            "Ошибка соединения с сайтом ЦБ РФ. Проверьте подключение к интернету"
+        ) from exc
 
     except requests.exceptions.HTTPError as e:
         raise CBRConnectionError(f"HTTP ошибка при запросе к ЦБ РФ: {e}") from e
