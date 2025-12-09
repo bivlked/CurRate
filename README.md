@@ -5,12 +5,12 @@
 **Конвертер валют с курсами ЦБ РФ**
 
 [![Python](https://img.shields.io/badge/Python-3.14+-blue.svg)](https://www.python.org/)
-[![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](https://github.com/bivlked/CurRate/releases/tag/v1.0.0)
+[![Version](https://img.shields.io/badge/Version-2.0.0-blue.svg)](https://github.com/bivlked/CurRate/releases/tag/v2.0.0)
 [![Poetry](https://img.shields.io/badge/Poetry-Latest-60a5fa.svg)](https://python-poetry.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-85-success.svg)](tests/)
-[![Coverage](https://img.shields.io/badge/Coverage-78%25-success.svg)](tests/)
-[![Code Quality](https://img.shields.io/badge/Pylint-9.41%2F10-brightgreen.svg)](src/currate/)
+[![Coverage](https://img.shields.io/badge/Coverage-77%25-success.svg)](tests/)
+[![Code Quality](https://img.shields.io/badge/Pylint-10.00%2F10-brightgreen.svg)](src/currate/)
 
 GUI приложение на Python для конвертации USD и EUR в рубли по официальным курсам Центрального Банка РФ
 
