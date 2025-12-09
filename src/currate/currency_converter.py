@@ -75,9 +75,6 @@ class CurrencyConverter:
         if rate is None:
             try:
                 rate = get_currency_rate(currency, date)
-                if rate is None:
-                    return None, None, "Не удалось получить курс валюты"
-
                 # Сохраняем в кэш
                 if self._use_cache and self._cache is not None:
                     self._cache.set(currency, date, rate)
@@ -120,9 +117,6 @@ class CurrencyConverter:
         if rate is None:
             try:
                 rate = get_currency_rate(normalized_currency, date)
-                if rate is None:
-                    return None, "Не удалось получить курс валюты"
-
                 if self._use_cache and self._cache is not None:
                     self._cache.set(normalized_currency, date, rate)
 

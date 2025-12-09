@@ -170,15 +170,23 @@ def test_convert_parse_error(mock_get_rate):
 
 @patch('src.currate.currency_converter.get_currency_rate')
 def test_convert_rate_none(mock_get_rate):
-    """Тест обработки случая, когда курс не получен (None)."""
-    mock_get_rate.return_value = None
+    """
+    Тест обработки случая, когда get_currency_rate бросает исключение.
+    
+    Примечание: get_currency_rate никогда не возвращает None,
+    всегда либо возвращает float, либо бросает CBRParserError.
+    Этот тест проверяет обработку исключения.
+    """
+    from src.currate.cbr_parser import CBRParserError
+    mock_get_rate.side_effect = CBRParserError("Ошибка получения курса")
     
     converter = CurrencyConverter(use_cache=False)
     result, rate, error = converter.convert(100.0, "USD", "01.12.2024")
     
     assert result is None
     assert rate is None
-    assert "Не удалось получить курс" in error
+    assert error is not None
+    assert "Ошибка получения курса" in error
 
 
 def test_get_rate_success():
