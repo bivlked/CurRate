@@ -8,9 +8,9 @@
 [![Version](https://img.shields.io/badge/Version-2.0.0-blue.svg)](https://github.com/bivlked/CurRate/releases/tag/v2.0.0)
 [![Poetry](https://img.shields.io/badge/Poetry-Latest-60a5fa.svg)](https://python-poetry.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-85-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-91-success.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/Coverage-77%25-success.svg)](tests/)
-[![Code Quality](https://img.shields.io/badge/Pylint-10.00%2F10-brightgreen.svg)](src/currate/)
+[![Code Quality](https://img.shields.io/badge/Pylint-9.35%2F10-brightgreen.svg)](src/currate/)
 
 GUI приложение на Python для конвертации USD и EUR в рубли по официальным курсам Центрального Банка РФ
 
@@ -156,9 +156,9 @@ CurRate/
 
 ## 🧪 Тестирование
 
-Проект имеет высокое покрытие тестами (**78%**, выше требуемых 70%):
+Проект имеет высокое покрытие тестами (**77%**, выше требуемых 70%):
 
-- ✅ **85 тестов** покрывают все основные компоненты
+- ✅ **91 тест** покрывают все основные компоненты
 - ✅ Unit-тесты для всех модулей
 - ✅ Интеграционные тесты
 - ✅ Тесты граничных случаев и обработки ошибок
@@ -229,10 +229,10 @@ poetry run pytest
 
 ### Качество кода
 
-- ✅ **Pylint**: 9.41/10
+- ✅ **Pylint**: 9.35/10
 - ✅ **Mypy**: без ошибок типов
 - ✅ **Black**: автоматическое форматирование
-- ✅ **Pytest**: 85 тестов с покрытием 78%
+- ✅ **Pytest**: 91 тест с покрытием 77%
 
 ## 📦 Зависимости
 
