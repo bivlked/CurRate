@@ -133,4 +133,35 @@ def test_convert_with_cache_enabled(mock_get_rate):
     assert mock_get_rate.call_count == 0
 
 
+@patch('src.currate.currency_converter.get_currency_rate')
+def test_get_rate_with_parser_error(mock_get_rate):
+    """Тест get_rate с ошибкой парсинга (CBRParserError)."""
+    from src.currate.cbr_parser import CBRParseError
+    converter = CurrencyConverter(use_cache=False)
+    mock_get_rate.side_effect = CBRParseError("Валюта не найдена")
+
+    rate, error = converter.get_rate("USD", "01.12.2024")
+
+    assert rate is None
+    assert error is not None
+    assert "не найден" in error or "обработке данных" in error
+    mock_get_rate.assert_called_once_with("USD", "01.12.2024")
+
+
+def test_normalize_currency_with_none():
+    """Тест _normalize_currency с None."""
+    result = CurrencyConverter._normalize_currency(None)
+    assert result is None
+
+
+def test_normalize_currency_with_empty_string():
+    """Тест _normalize_currency с пустой строкой."""
+    result = CurrencyConverter._normalize_currency("")
+    assert result is None
+
+
+def test_normalize_currency_with_whitespace():
+    """Тест _normalize_currency со строкой из пробелов."""
+    result = CurrencyConverter._normalize_currency("   ")
+    assert result is None
 

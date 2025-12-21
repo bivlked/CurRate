@@ -84,6 +84,22 @@ def test_format_result_format_unchanged():
         assert "(" in result and ")" in result, f"Результат должен содержать скобки: {result}"
 
 
+def test_format_result_with_result_in_rub_parameter():
+    """Тест format_result с параметром result_in_rub."""
+    converter = CurrencyConverter(use_cache=False)
+    
+    # Тест с явным указанием result_in_rub
+    result1 = converter.format_result(100.0, 95.5, "USD", result_in_rub=9550.0)
+    result2 = converter.format_result(100.0, 95.5, "USD")  # Без параметра
+    
+    # Результаты должны быть одинаковыми
+    assert result1 == result2
+    
+    # Тест с другим значением result_in_rub (не равным amount * rate)
+    result3 = converter.format_result(100.0, 95.5, "USD", result_in_rub=10000.0)
+    assert "10 000,00" in result3  # Используется переданное значение, а не вычисленное
+
+
 def test_format_result_copy_paste_format():
     """КРИТИЧНЫЙ ТЕСТ: Формат для копирования в буфер обмена."""
     converter = CurrencyConverter(use_cache=False)

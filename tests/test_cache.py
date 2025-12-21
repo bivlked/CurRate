@@ -60,5 +60,23 @@ def test_cache_eviction():
     # Добавляем еще одну запись - должно сработать вытеснение
     cache.set("USD", "03.12.2024", 97.0)
 
-    # Размер кэша должен уменьшиться (удалено 25% = 1 запись)
+    # Размер кэша должен остаться 4 (одна запись вытеснена)
     assert cache.size() == 4
+    # Проверяем, что самая старая запись вытеснена
+    assert cache.get("USD", "01.12.2024") is None  # Первая запись должна быть вытеснена
+    assert cache.get("USD", "03.12.2024") == 97.0  # Новая запись должна быть в кэше
+
+
+def test_get_cache_returns_global_instance():
+    """Тест, что get_cache() возвращает глобальный экземпляр кэша."""
+    from src.currate.cache import get_cache
+    
+    cache1 = get_cache()
+    cache2 = get_cache()
+    
+    # Должен быть один и тот же экземпляр
+    assert cache1 is cache2
+    
+    # Изменения в одном должны отражаться в другом
+    cache1.set("USD", "01.12.2024", 95.5)
+    assert cache2.get("USD", "01.12.2024") == 95.5
