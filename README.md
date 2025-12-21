@@ -55,22 +55,17 @@ poetry shell
 ### Запуск
 
 ```bash
-# Способ 1: Через скрипт run.py (самый простой)
+# Способ 1: Через скрипт run.py (рекомендуется, самый простой)
 poetry run python run.py
 
-# Способ 2: Запуск как модуль Python (рекомендуется)
-poetry run python -m src.currate.main
-
-# Способ 3: Прямой запуск через Poetry
-poetry run python src/currate/main.py
-
-# Способ 4: После активации виртуального окружения
+# Способ 2: После активации виртуального окружения
 poetry shell
 python run.py
+
+# Способ 3: Прямой запуск модуля (для разработки)
+poetry run python -m src.currate.main
 # или
-python -m src.currate.main
-# или
-python src/currate/main.py
+poetry run python src/currate/main.py
 ```
 
 Приложение откроет GUI окно с:
