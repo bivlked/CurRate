@@ -88,6 +88,7 @@ def create_session_with_retry() -> requests.Session:
 # Глобальная сессия для переиспользования соединений
 _session: Optional[requests.Session] = None
 _session_lock = threading.Lock()  # Блокировка для потокобезопасной инициализации
+_request_lock = threading.Lock()  # Блокировка для потокобезопасных HTTP запросов
 
 
 def get_session() -> requests.Session:
@@ -176,7 +177,11 @@ def get_currency_rate(currency: str, date: str, timeout: int = 10) -> float:
         session = get_session()
 
         # Выполняем запрос с таймаутом
-        response = session.get(url, timeout=timeout)
+        # requests.Session технически потокобезопасен для чтения (GET запросы),
+        # но для дополнительной безопасности в многопоточном окружении используем блокировку
+        # вокруг запроса, чтобы избежать потенциальных проблем с внутренним состоянием сессии
+        with _request_lock:
+            response = session.get(url, timeout=timeout)
         response.raise_for_status()
 
         # Парсим XML

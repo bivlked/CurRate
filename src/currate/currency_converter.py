@@ -61,6 +61,8 @@ class CurrencyConverter:
         if amount <= 0:
             return None, None, "Сумма должна быть положительным числом"
 
+        # Нормализуем дату перед валидацией (удаляем пробелы)
+        date = date.strip()
         # Валидация даты
         validation_error = self._validate_date(date)
         if validation_error:
@@ -105,6 +107,8 @@ class CurrencyConverter:
         if normalized_currency is None or normalized_currency not in self.SUPPORTED_CURRENCIES:
             return None, f"Неподдерживаемая валюта: {currency}"
 
+        # Нормализуем дату перед валидацией (удаляем пробелы)
+        date = date.strip()
         validation_error = self._validate_date(date)
         if validation_error:
             return None, validation_error
@@ -131,11 +135,14 @@ class CurrencyConverter:
         Валидирует формат и значение даты.
 
         Args:
-            date: Дата в формате DD.MM.YYYY.
+            date: Дата в формате DD.MM.YYYY. Пробелы автоматически удаляются.
 
         Returns:
             Optional[str]: Сообщение об ошибке или None, если дата валидна.
         """
+        # Нормализуем дату: удаляем пробелы
+        date = date.strip()
+        
         try:
             parsed_date = datetime.strptime(date, '%d.%m.%Y')
 
@@ -207,9 +214,15 @@ class CurrencyConverter:
         Нормализует строку суммы и преобразует ее в float.
 
         Убирает пробелы/неразрывные пробелы и разделители тысяч (пробел/точка/апостроф),
-        заменяет запятую на точку. Если точек несколько, оставляет последнюю как
-        десятичный разделитель. Если точка одна и после неё ровно 3 цифры - это
-        разделитель тысяч (например, "1.234" = 1234), иначе - десятичный разделитель.
+        заменяет запятую на точку. Определяет десятичный разделитель по правилу:
+        десятичный разделитель - это тот, после которого меньше 3 цифр (обычно 2 для копеек).
+        Все остальные разделители считаются разделителями тысяч и удаляются.
+
+        Примеры:
+        - "1.234.567" → 1234567 (все точки - разделители тысяч)
+        - "1.234.567,89" → 1234567.89 (последняя запятая - десятичный разделитель)
+        - "1,234,567.89" → 1234567.89 (последняя точка - десятичный разделитель)
+        - "123 456 789,14" → 123456789.14 (последняя запятая - десятичный разделитель)
         """
         if amount_str is None:
             return None
@@ -225,19 +238,57 @@ class CurrencyConverter:
         if not cleaned:
             return None
 
-        cleaned = cleaned.replace(',', '.')
+        # Определяем, какой разделитель используется как десятичный
+        # Правило: десятичный разделитель - это тот, после которого меньше 3 цифр
+        # Если после разделителя 3+ цифры, это разделитель тысяч
+        last_comma_pos = cleaned.rfind(',')
+        last_dot_pos = cleaned.rfind('.')
         
-        # Если точек несколько, оставляем последнюю как десятичный разделитель
-        if cleaned.count('.') > 1:
-            parts = cleaned.split('.')
-            cleaned = ''.join(parts[:-1]) + '.' + parts[-1]
-        # Если точка одна, проверяем: если после точки ровно 3 цифры - это разделитель тысяч
-        elif cleaned.count('.') == 1:
-            parts = cleaned.split('.')
-            if len(parts) == 2 and len(parts[1]) == 3 and parts[1].isdigit():
-                # Точка как разделитель тысяч (например, "1.234" = 1234)
-                cleaned = parts[0] + parts[1]
-            # Иначе точка остаётся как десятичный разделитель (например, "1.23" = 1.23)
+        # Определяем позицию последнего разделителя (запятая или точка)
+        if last_comma_pos > last_dot_pos:
+            # Запятая - последний разделитель
+            after_comma = cleaned[last_comma_pos + 1:]
+            if after_comma.isdigit() and len(after_comma) < 3:
+                # Запятая - десятичный разделитель, точка - разделитель тысяч
+                cleaned = cleaned.replace('.', '').replace(',', '.')
+            else:
+                # Запятая - разделитель тысяч, удаляем все разделители
+                cleaned = cleaned.replace(',', '').replace('.', '')
+        elif last_dot_pos > last_comma_pos:
+            # Точка - последний разделитель
+            after_dot = cleaned[last_dot_pos + 1:]
+            if after_dot.isdigit() and len(after_dot) < 3:
+                # Точка - десятичный разделитель, запятая - разделитель тысяч
+                cleaned = cleaned.replace(',', '')
+            elif after_dot.isdigit() and len(after_dot) == 3:
+                # После точки ровно 3 цифры - проверяем контекст
+                if last_comma_pos != -1:
+                    # Есть запятая - она может быть десятичным разделителем
+                    after_comma = cleaned[last_comma_pos + 1:]
+                    if after_comma.isdigit() and len(after_comma) < 3:
+                        # Запятая - десятичный разделитель, точка - разделитель тысяч
+                        cleaned = cleaned.replace('.', '').replace(',', '.')
+                    else:
+                        # Оба разделителя - разделители тысяч
+                        cleaned = cleaned.replace(',', '').replace('.', '')
+                else:
+                    # Только точка, после неё 3 цифры - это разделитель тысяч (европейский формат)
+                    cleaned = cleaned.replace('.', '')
+            else:
+                # После точки больше 3 цифр - это десятичный разделитель
+                cleaned = cleaned.replace(',', '')
+        else:
+            # Нет разделителей или только один тип
+            if ',' in cleaned and '.' not in cleaned:
+                # Только запятая - заменяем на точку (десятичный разделитель)
+                cleaned = cleaned.replace(',', '.')
+            elif '.' in cleaned and ',' not in cleaned:
+                # Только точка - проверяем количество цифр после неё
+                parts = cleaned.split('.')
+                if len(parts) == 2 and len(parts[1]) == 3 and parts[1].isdigit():
+                    # Точка как разделитель тысяч (например, "1.234" = 1234)
+                    cleaned = parts[0] + parts[1]
+                # Иначе точка остаётся как десятичный разделитель
 
         try:
             return float(cleaned)
