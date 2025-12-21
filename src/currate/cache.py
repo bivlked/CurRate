@@ -8,6 +8,7 @@
 from typing import Optional, Tuple
 from collections import OrderedDict
 from datetime import datetime, timedelta
+import threading
 
 
 class CurrencyCache:
@@ -29,6 +30,7 @@ class CurrencyCache:
         self._cache: OrderedDict[Tuple[str, str], Tuple[float, datetime]] = OrderedDict()
         self._max_size = max_size
         self._ttl = timedelta(hours=ttl_hours)
+        self._lock = threading.Lock()  # Блокировка для потокобезопасности
 
     def get(self, currency: str, date: str) -> Optional[float]:
         """
@@ -36,6 +38,8 @@ class CurrencyCache:
 
         Использует LRU (Least Recently Used) стратегию:
         при доступе запись перемещается в конец (самая недавно использованная).
+
+        Потокобезопасный метод.
 
         Args:
             currency: Код валюты (USD, EUR).
@@ -46,19 +50,20 @@ class CurrencyCache:
         """
         key = (currency, date)
 
-        if key not in self._cache:
-            return None
+        with self._lock:
+            if key not in self._cache:
+                return None
 
-        # Извлекаем запись (удаляем из текущей позиции)
-        rate, cached_at = self._cache.pop(key)
+            # Извлекаем запись (удаляем из текущей позиции)
+            rate, cached_at = self._cache.pop(key)
 
-        # Проверяем, не устарела ли запись (ленивая проверка TTL)
-        if datetime.now() - cached_at > self._ttl:
-            return None
+            # Проверяем, не устарела ли запись (ленивая проверка TTL)
+            if datetime.now() - cached_at > self._ttl:
+                return None
 
-        # Перемещаем в конец (самая недавно использованная)
-        self._cache[key] = (rate, cached_at)
-        return rate
+            # Перемещаем в конец (самая недавно использованная)
+            self._cache[key] = (rate, cached_at)
+            return rate
 
     def set(self, currency: str, date: str, rate: float) -> None:
         """
@@ -67,6 +72,8 @@ class CurrencyCache:
         Использует LRU (Least Recently Used) стратегию:
         при переполнении удаляется самая старая запись (первая в OrderedDict).
 
+        Потокобезопасный метод.
+
         Args:
             currency: Код валюты (USD, EUR).
             date: Дата в формате DD.MM.YYYY.
@@ -74,23 +81,25 @@ class CurrencyCache:
         """
         key = (currency, date)
 
-        # Если ключ уже есть - обновляем и перемещаем в конец
-        if key in self._cache:
-            self._cache.pop(key)
-        elif len(self._cache) >= self._max_size:
-            # При переполнении сначала очищаем устаревшие записи (ленивая очистка)
-            # Это оптимизирует производительность: очистка только при необходимости
-            self.cleanup_expired()
-            # Если после очистки все еще переполнен, удаляем самый старый элемент
-            if len(self._cache) >= self._max_size:
-                self._cache.popitem(last=False)
+        with self._lock:
+            # Если ключ уже есть - обновляем и перемещаем в конец
+            if key in self._cache:
+                self._cache.pop(key)
+            elif len(self._cache) >= self._max_size:
+                # При переполнении сначала очищаем устаревшие записи (ленивая очистка)
+                # Это оптимизирует производительность: очистка только при необходимости
+                self._cleanup_expired_unlocked()
+                # Если после очистки все еще переполнен, удаляем самый старый элемент
+                if len(self._cache) >= self._max_size:
+                    self._cache.popitem(last=False)
 
-        # Добавляем в конец (самая недавно использованная)
-        self._cache[key] = (rate, datetime.now())
+            # Добавляем в конец (самая недавно использованная)
+            self._cache[key] = (rate, datetime.now())
 
     def clear(self) -> None:
-        """Очищает весь кэш."""
-        self._cache.clear()
+        """Очищает весь кэш. Потокобезопасный метод."""
+        with self._lock:
+            self._cache.clear()
 
     def size(self) -> int:
         """
@@ -99,14 +108,25 @@ class CurrencyCache:
         Returns:
             int: Количество записей в кэше.
         """
-        return len(self._cache)
+        with self._lock:
+            return len(self._cache)
 
     def cleanup_expired(self) -> int:
         """
         Удаляет устаревшие записи из кэша.
 
+        Потокобезопасный метод.
+
         Returns:
             int: Количество удаленных записей.
+        """
+        with self._lock:
+            return self._cleanup_expired_unlocked()
+
+    def _cleanup_expired_unlocked(self) -> int:
+        """
+        Внутренний метод для очистки устаревших записей без блокировки.
+        Должен вызываться только внутри методов, уже удерживающих _lock.
         """
         expired_keys = []
         now = datetime.now()
