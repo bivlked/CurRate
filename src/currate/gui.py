@@ -201,7 +201,8 @@ class CurrencyConverterApp:
             return
 
         if result is not None and rate is not None:
-            formatted_result = self.converter.format_result(amount, rate, currency)
+            # Используем готовый result из convert(), чтобы избежать лишнего пересчёта
+            formatted_result = self.converter.format_result(amount, rate, currency, result_in_rub=result)
             self.result_label.config(text=formatted_result)
             self.copy_button.config(state=tk.NORMAL)  # Активируем кнопку копирования
 

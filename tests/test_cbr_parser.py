@@ -152,8 +152,9 @@ def test_get_currency_rate_http_error(mock_get_session):
     mock_session_instance = Mock()
     mock_session_instance.get.return_value = mock_response
     mock_get_session.return_value = mock_session_instance
-    
-    with pytest.raises(CBRConnectionError) as exc_info:
+
+    # HTTP ошибки теперь классифицируются как CBRParseError (ошибка сервера/данных)
+    with pytest.raises(CBRParseError) as exc_info:
         get_currency_rate("USD", "01.12.2024")
     
     assert "HTTP ошибка" in str(exc_info.value)
@@ -264,7 +265,7 @@ def test_get_currency_rate_retry_logic(mock_get_session):
     from src.currate.cbr_parser import reset_session
     reset_session()  # Сбросить глобальную сессию перед тестом
     
-    # Тест проверяет, что HTTPError преобразуется в CBRConnectionError
+    # Тест проверяет, что HTTPError преобразуется в CBRParseError (не CBRConnectionError)
     mock_response_error = Mock()
     mock_response_error.status_code = 503
     mock_response_error.raise_for_status.side_effect = HTTPError("503 Service Unavailable")
@@ -273,8 +274,8 @@ def test_get_currency_rate_retry_logic(mock_get_session):
     mock_session_instance.get.return_value = mock_response_error
     mock_get_session.return_value = mock_session_instance
     
-    # Должно быть преобразовано в CBRConnectionError
-    with pytest.raises(CBRConnectionError) as exc_info:
+    # Должно быть преобразовано в CBRParseError (HTTP ошибки - это ошибки сервера/данных)
+    with pytest.raises(CBRParseError) as exc_info:
         get_currency_rate("USD", "01.12.2024")
     
     assert "HTTP ошибка" in str(exc_info.value)

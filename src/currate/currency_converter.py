@@ -152,7 +152,8 @@ class CurrencyConverter:
     def format_result(
         amount: float,
         rate: float,
-        currency: str
+        currency: str,
+        result_in_rub: Optional[float] = None
     ) -> str:
         """
         Форматирует результат конвертации для отображения.
@@ -161,11 +162,15 @@ class CurrencyConverter:
             amount: Исходная сумма.
             rate: Курс валюты.
             currency: Код валюты.
+            result_in_rub: Готовый результат конвертации в рублях (опционально).
+                          Если не указан, вычисляется как amount * rate.
 
         Returns:
             str: Отформатированная строка результата.
         """
-        result_in_rub = amount * rate
+        if result_in_rub is None:
+            result_in_rub = amount * rate
+        
         normalized_currency = currency.upper()
         currency_symbol = "$" if normalized_currency == "USD" else "€"
 
@@ -187,7 +192,8 @@ class CurrencyConverter:
 
         Убирает пробелы/неразрывные пробелы и разделители тысяч (пробел/точка/апостроф),
         заменяет запятую на точку. Если точек несколько, оставляет последнюю как
-        десятичный разделитель.
+        десятичный разделитель. Если точка одна и после неё ровно 3 цифры - это
+        разделитель тысяч (например, "1.234" = 1234), иначе - десятичный разделитель.
         """
         if amount_str is None:
             return None
@@ -204,9 +210,18 @@ class CurrencyConverter:
             return None
 
         cleaned = cleaned.replace(',', '.')
+        
+        # Если точек несколько, оставляем последнюю как десятичный разделитель
         if cleaned.count('.') > 1:
             parts = cleaned.split('.')
             cleaned = ''.join(parts[:-1]) + '.' + parts[-1]
+        # Если точка одна, проверяем: если после точки ровно 3 цифры - это разделитель тысяч
+        elif cleaned.count('.') == 1:
+            parts = cleaned.split('.')
+            if len(parts) == 2 and len(parts[1]) == 3 and parts[1].isdigit():
+                # Точка как разделитель тысяч (например, "1.234" = 1234)
+                cleaned = parts[0] + parts[1]
+            # Иначе точка остаётся как десятичный разделитель (например, "1.23" = 1.23)
 
         try:
             return float(cleaned)

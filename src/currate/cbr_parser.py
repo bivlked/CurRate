@@ -223,7 +223,9 @@ def get_currency_rate(currency: str, date: str, timeout: int = 10) -> float:
         ) from exc
 
     except requests.exceptions.HTTPError as e:
-        raise CBRConnectionError(f"HTTP ошибка при запросе к ЦБ РФ: {e}") from e
+        # HTTP ошибки (4xx, 5xx) - это ошибки сервера/данных, а не соединения
+        # Классифицируем как ошибку парсинга, так как сервер вернул ответ, но с ошибкой
+        raise CBRParseError(f"HTTP ошибка при запросе к ЦБ РФ: {e}") from e
 
     except Exception as e:
         # Ловим все остальные исключения

@@ -45,12 +45,12 @@ def test_cbr_connection_error_connection():
     assert "интернету" in message
 
 
-def test_cbr_connection_error_generic():
-    """Тест user-friendly сообщения для общей ошибки соединения."""
-    error = CBRConnectionError("HTTP ошибка при запросе")
+def test_cbr_parse_error_http_error():
+    """Тест user-friendly сообщения для HTTP ошибки (ошибка сервера/данных)."""
+    error = CBRParseError("HTTP ошибка при запросе")
     message = error.get_user_message()
-    assert "соединения" in message or "сервером" in message
-    assert "позже" in message
+    # HTTP ошибки классифицируются как ошибки обработки данных
+    assert "обработке данных" in message or "другую дату" in message
 
 
 def test_cbr_parse_error_currency_not_found():
