@@ -5,7 +5,7 @@
 **Конвертер валют с курсами ЦБ РФ**
 
 [![Python](https://img.shields.io/badge/Python-3.14+-blue.svg)](https://www.python.org/)
-[![Version](https://img.shields.io/badge/Version-2.0.0-blue.svg)](https://github.com/bivlked/CurRate/releases/tag/v2.0.0)
+[![Version](https://img.shields.io/badge/Version-3.0.0-blue.svg)](https://github.com/bivlked/CurRate/releases/tag/v3.0.0)
 [![Poetry](https://img.shields.io/badge/Poetry-Latest-60a5fa.svg)](https://python-poetry.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-130-success.svg)](tests/)

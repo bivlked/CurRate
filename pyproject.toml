@@ -1,6 +1,6 @@
 [project]
 name = "currate"
-version = "2.0.0"
+version = "3.0.0"
 description = "Currency rates project"
 authors = [
     {name = "Ivan Bondarev", email = "ivan@bondarev.net"}
