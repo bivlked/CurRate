@@ -8,6 +8,7 @@
 
 from typing import Optional
 import xml.etree.ElementTree as ET
+import threading
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
@@ -86,6 +87,7 @@ def create_session_with_retry() -> requests.Session:
 
 # Глобальная сессия для переиспользования соединений
 _session: Optional[requests.Session] = None
+_session_lock = threading.Lock()  # Блокировка для потокобезопасной инициализации
 
 
 def get_session() -> requests.Session:
@@ -96,12 +98,18 @@ def get_session() -> requests.Session:
     для всех последующих запросов, что позволяет использовать
     HTTP keep-alive и connection pooling.
 
+    Потокобезопасный метод: использует блокировку для предотвращения
+    race condition при инициализации сессии в нескольких потоках.
+
     Returns:
         requests.Session: Сессия с настроенной retry-логикой.
     """
     global _session
     if _session is None:
-        _session = create_session_with_retry()
+        with _session_lock:
+            # Двойная проверка для избежания повторной инициализации
+            if _session is None:
+                _session = create_session_with_retry()
     return _session
 
 
@@ -111,11 +119,14 @@ def reset_session() -> None:
 
     Полезно для тестирования или при необходимости принудительного
     пересоздания сессии с новыми параметрами.
+
+    Потокобезопасный метод.
     """
     global _session
-    if _session is not None:
-        _session.close()
-        _session = None
+    with _session_lock:
+        if _session is not None:
+            _session.close()
+            _session = None
 
 
 def _convert_date_format(date_str: str) -> str:
@@ -141,8 +152,8 @@ def get_currency_rate(currency: str, date: str, timeout: int = 10) -> float:
     то функция вернет 0.285 (курс за 1 HUF).
 
     Args:
-        currency: Код валюты (USD, EUR).
-        date: Дата в формате DD.MM.YYYY.
+        currency: Код валюты (USD, EUR). Пробелы автоматически удаляются.
+        date: Дата в формате DD.MM.YYYY. Пробелы автоматически удаляются.
         timeout: Таймаут запроса в секундах (по умолчанию 10).
 
     Returns:
@@ -152,6 +163,10 @@ def get_currency_rate(currency: str, date: str, timeout: int = 10) -> float:
         CBRConnectionError: При ошибке соединения с сайтом ЦБ РФ.
         CBRParseError: При ошибке парсинга данных или если валюта не найдена.
     """
+    # Нормализуем входные данные: удаляем пробелы
+    currency = currency.strip().upper()
+    date = date.strip()
+    
     # Конвертируем формат даты для XML API (DD.MM.YYYY -> DD/MM/YYYY)
     api_date = _convert_date_format(date)
     url = f"https://www.cbr.ru/scripts/XML_daily.asp?date_req={api_date}"
@@ -176,14 +191,13 @@ def get_currency_rate(currency: str, date: str, timeout: int = 10) -> float:
                 f"Неожиданная структура XML: ожидался элемент ValCurs, получен {root.tag}"
             )
 
-        # Ищем нужную валюту
-        currency_upper = currency.upper()
+        # Ищем нужную валюту (currency уже нормализован выше)
         for valute in root.findall('Valute'):
             char_code_elem = valute.find('CharCode')
             if char_code_elem is None or char_code_elem.text is None:
                 continue
 
-            if char_code_elem.text.strip() == currency_upper:
+            if char_code_elem.text.strip() == currency:
                 try:
                     # Извлекаем номинал
                     nominal_elem = valute.find('Nominal')

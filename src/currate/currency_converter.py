@@ -158,6 +158,10 @@ class CurrencyConverter:
         """
         Форматирует результат конвертации для отображения.
 
+        Форматирует числа отдельно, чтобы избежать проблем с глобальной заменой
+        символов в тексте. Использует русский формат: пробел как разделитель тысяч,
+        запятая как десятичный разделитель.
+
         Args:
             amount: Исходная сумма.
             rate: Курс валюты.
@@ -174,13 +178,25 @@ class CurrencyConverter:
         normalized_currency = currency.upper()
         currency_symbol = "$" if normalized_currency == "USD" else "€"
 
-        # Форматируем: разделитель тысяч - пробел, десятичный разделитель - запятая
+        # Форматируем числа отдельно, чтобы не трогать текст
+        def format_number(num: float, decimals: int = 2) -> str:
+            """Форматирует число в русском формате: пробел - тысячи, запятая - десятичные."""
+            # Форматируем с точкой как десятичным разделителем
+            formatted = f"{num:,.{decimals}f}"
+            # Заменяем запятую на пробел (разделитель тысяч)
+            formatted = formatted.replace(',', ' ')
+            # Заменяем точку на запятую (десятичный разделитель)
+            formatted = formatted.replace('.', ',')
+            return formatted
+
+        result_in_rub_str = format_number(result_in_rub, decimals=2)
+        amount_str = format_number(amount, decimals=2)
+        rate_str = format_number(rate, decimals=4)
+
+        # Собираем строку, форматируя только числа, текст остаётся без изменений
         result_str = (
-            f"{result_in_rub:,.2f} руб. "
-            f"({currency_symbol}{amount:,.2f} по курсу {rate:,.4f})"
-        )
-        result_str = result_str.replace(',', ' ').replace('.', ',').replace(
-            'руб,', 'руб.'
+            f"{result_in_rub_str} руб. "
+            f"({currency_symbol}{amount_str} по курсу {rate_str})"
         )
 
         return result_str

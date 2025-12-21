@@ -19,9 +19,23 @@ import tkinter as tk
 # Используем абсолютный импорт для поддержки прямого запуска
 try:
     from .gui import CurrencyConverterApp
-except ImportError:
-    # Если относительный импорт не работает, используем абсолютный
-    from src.currate.gui import CurrencyConverterApp
+except ModuleNotFoundError:
+    # ModuleNotFoundError возникает при отсутствии модуля (относительный импорт не работает)
+    # Пытаемся использовать абсолютный импорт
+    try:
+        from src.currate.gui import CurrencyConverterApp
+    except ImportError as abs_e:
+        # Если и абсолютный импорт не работает, это может быть ошибка зависимостей
+        # Пробрасываем её дальше с понятным сообщением
+        raise ImportError(
+            f"Не удалось импортировать CurrencyConverterApp. "
+            f"Проверьте установку зависимостей (pyperclip, tkcalendar): {abs_e}"
+        ) from abs_e
+except ImportError as e:
+    # ImportError (не ModuleNotFoundError) возникает при ошибках внутри модуля
+    # (например, отсутствие pyperclip, tkcalendar внутри gui.py)
+    # Пробрасываем её дальше без маскировки, чтобы пользователь видел реальную причину
+    raise
 
 
 def main() -> None:
