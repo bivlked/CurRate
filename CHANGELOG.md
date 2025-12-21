@@ -141,6 +141,7 @@
 - **Исправлено** - для исправления ошибок
 - **Безопасность** - в случае уязвимостей
 
-[Unreleased]: https://github.com/bivlked/CurRate/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/bivlked/CurRate/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/bivlked/CurRate/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/bivlked/CurRate/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/bivlked/CurRate/releases/tag/v0.1.0
